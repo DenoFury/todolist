@@ -5,6 +5,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.skin.DatePickerSkin;
 
 public class MainUI extends BorderPane {
     private TextField titleField;
@@ -59,6 +61,11 @@ public class MainUI extends BorderPane {
         inputArea.add(descriptionField, 1,1);
         inputArea.add(createAddButton(),1,2);
 
+
+        DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
+        DatePickerSkin datePickerSkin = new DatePickerSkin(datePicker);
+        javafx.scene.Node calendarVisual = datePickerSkin.getPopupContent();
+        leftPane.getChildren().add(calendarVisual);
     }
 
     private Button createAddButton() {
