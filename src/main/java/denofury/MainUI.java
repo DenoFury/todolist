@@ -14,7 +14,6 @@ public class MainUI extends BorderPane {
     private VBox leftPane;
     private ScrollPane centerPane;
     private GridPane inputArea;
-    private HBox taskRow = new HBox(15);
     private DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
 
     public MainUI(){
@@ -83,8 +82,7 @@ public class MainUI extends BorderPane {
             // future use for task filtering
         });
 
-        taskRow.setFocusTraversable(true);
-        taskRow.setOnMouseClicked(event -> taskRow.requestFocus());
+
     }
 
     private Button createAddButton() {
@@ -95,7 +93,8 @@ public class MainUI extends BorderPane {
             String description = descriptionField.getText();
 
             if(!title.isEmpty()){
-
+                HBox taskRow = new HBox(15);
+                taskRow.setFocusTraversable(true);
                 taskRow.setPadding(new Insets(5));
                 Task task = new Task(title,description, date);
 
@@ -114,7 +113,10 @@ public class MainUI extends BorderPane {
                 taskRow.getChildren().addAll(textData,spacer,removeButton);
                 taskListContainer.getChildren().add(taskRow);
 
+                removeButton.setVisible(false);
+                removeButton.setFocusTraversable(false);
                 taskRow.setFocusTraversable(true);
+                taskRow.setOnMouseClicked(event -> {taskRow.requestFocus();});
                 taskRow.focusedProperty().addListener((observable, wasFocused, nowFocus)-> {
                     if(nowFocus){
                         removeButton.setVisible(true);
@@ -122,7 +124,7 @@ public class MainUI extends BorderPane {
                         removeButton.setVisible(false);
                     }
                 });
-                taskRow.setOnMouseClicked(event -> taskRow.requestFocus());
+
                 titleField.clear();
                 descriptionField.clear();
             }
