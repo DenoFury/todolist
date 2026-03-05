@@ -1,10 +1,9 @@
 package denofury;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.skin.DatePickerSkin;
 
@@ -15,6 +14,8 @@ public class MainUI extends BorderPane {
     private VBox leftPane;
     private ScrollPane centerPane;
     private GridPane inputArea;
+    private HBox taskRow = new HBox(15);
+    private DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
 
     public MainUI(){
         leftPane = new VBox();
@@ -28,6 +29,9 @@ public class MainUI extends BorderPane {
         leftPane.setPrefWidth(250);
 
         taskListContainer = new VBox();
+        taskListContainer.setSpacing(10);
+        taskListContainer.setAlignment(Pos.TOP_LEFT);
+        taskListContainer.setPadding(new Insets(10));
         centerPane.setContent(taskListContainer);
         centerPane.setFitToWidth(true);
 
@@ -37,6 +41,8 @@ public class MainUI extends BorderPane {
         this.setLeft(leftPane);
         this.setCenter(centerPane);
         this.setBottom(inputArea);
+
+        // new task section
 
         titleField = new TextField();
         titleField.setPromptText("Enter a title for your task");
@@ -55,29 +61,68 @@ public class MainUI extends BorderPane {
             }
         });
 
+
         inputArea.add(new Label("Title:"), 0 ,0);
         inputArea.add(titleField, 1, 0);
         inputArea.add(new Label("Notes"), 0, 1);
         inputArea.add(descriptionField, 1,1);
         inputArea.add(createAddButton(),1,2);
 
+        // calendar
 
-        DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
+
         DatePickerSkin datePickerSkin = new DatePickerSkin(datePicker);
         javafx.scene.Node calendarVisual = datePickerSkin.getPopupContent();
         leftPane.getChildren().add(calendarVisual);
+
+        // Date listener for the calendar
+
+        datePicker.valueProperty().addListener((observable, oldDate, newDate)-> {
+            System.out.println("listener added: " + newDate);
+
+            // future use for task filtering
+        });
+
+        taskRow.setFocusTraversable(true);
+        taskRow.setOnMouseClicked(event -> taskRow.requestFocus());
     }
 
     private Button createAddButton() {
         Button addButton = new Button("Add Task");
         addButton.setOnAction(e ->{
+            java.time.LocalDate date = datePicker.getValue();
             String title = titleField.getText();
             String description = descriptionField.getText();
 
             if(!title.isEmpty()){
-                Task task = new Task(title,description);
-                Label taskLabel = new Label(task.getTitle());
-                taskListContainer.getChildren().add(taskLabel);
+
+                taskRow.setPadding(new Insets(5));
+                Task task = new Task(title,description, date);
+
+                VBox textData = new VBox(2);
+                Label taskLabel = new Label(task.getTitle() + "[" + task.getDate() + "]");
+                textData.getChildren().add(taskLabel);
+
+
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                Button removeButton = new Button("Delete");
+                removeButton.setOnAction(event -> {
+                    taskListContainer.getChildren().remove(taskRow);
+                });
+                taskRow.getChildren().addAll(textData,spacer,removeButton);
+                taskListContainer.getChildren().add(taskRow);
+
+                taskRow.setFocusTraversable(true);
+                taskRow.focusedProperty().addListener((observable, wasFocused, nowFocus)-> {
+                    if(nowFocus){
+                        removeButton.setVisible(true);
+                    }else{
+                        removeButton.setVisible(false);
+                    }
+                });
+                taskRow.setOnMouseClicked(event -> taskRow.requestFocus());
                 titleField.clear();
                 descriptionField.clear();
             }
