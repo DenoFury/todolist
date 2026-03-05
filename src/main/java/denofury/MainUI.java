@@ -1,11 +1,15 @@
 package denofury;
 
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.skin.DatePickerSkin;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 
 public class MainUI extends BorderPane {
     private TextField titleField;
@@ -87,36 +91,53 @@ public class MainUI extends BorderPane {
 
     private Button createAddButton() {
         Button addButton = new Button("Add Task");
-        addButton.setOnAction(e ->{
+        addButton.setOnAction(addButtonEvent ->{
             java.time.LocalDate date = datePicker.getValue();
             String title = titleField.getText();
             String description = descriptionField.getText();
 
             if(!title.isEmpty()){
+                CheckBox checkBox = new CheckBox();
                 HBox taskRow = new HBox(15);
                 taskRow.setFocusTraversable(true);
                 taskRow.setPadding(new Insets(5));
                 Task task = new Task(title,description, date);
 
                 VBox textData = new VBox(2);
-                Label taskLabel = new Label(task.getTitle() + "[" + task.getDate() + "]");
-                textData.getChildren().add(taskLabel);
+                Text taskText = new Text(task.getTitle() + "[" + task.getDate() + "]");
+                textData.getChildren().add(taskText);
 
 
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
 
                 Button removeButton = new Button("Delete");
-                removeButton.setOnAction(event -> {
+                removeButton.setOnAction(removeEvent -> {
                     taskListContainer.getChildren().remove(taskRow);
                 });
-                taskRow.getChildren().addAll(textData,spacer,removeButton);
+                taskRow.getChildren().addAll(checkBox,textData,spacer,removeButton);
                 taskListContainer.getChildren().add(taskRow);
+
+                EventHandler<ActionEvent> checkBoxEvent = new EventHandler<ActionEvent>() {
+                    @Override
+                    public void handle(ActionEvent event) {
+                        if(checkBox.isSelected()){
+                            taskRow.setOpacity(0.5);
+                            taskText.setStrikethrough(true);
+                            taskText.setFill(Color.GRAY);
+                        }else{
+                            taskRow.setOpacity(1);
+                            taskText.setStrikethrough(false);
+                            taskText.setFill(Color.BLACK);
+                        }
+                    }
+                };
+                checkBox.setOnAction(checkBoxEvent);
 
                 removeButton.setVisible(false);
                 removeButton.setFocusTraversable(false);
                 taskRow.setFocusTraversable(true);
-                taskRow.setOnMouseClicked(event -> {taskRow.requestFocus();});
+                taskRow.setOnMouseClicked(deleteVisibilityEvent -> {taskRow.requestFocus();});
                 taskRow.focusedProperty().addListener((observable, wasFocused, nowFocus)-> {
                     if(nowFocus){
                         removeButton.setVisible(true);
