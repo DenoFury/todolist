@@ -9,11 +9,26 @@ public class Task {
     private String description;
     private LocalDate date;
 
+    public Task(){
+
+    }
     public Task(String title, String description, LocalDate date){
         this.Title = title;
         this.description = description;
         this.date = date;
 
+    }
+
+    public void setTitle(String title) {
+        Title = title;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getTitle() {

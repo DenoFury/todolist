@@ -1,5 +1,7 @@
 package denofury;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -11,6 +13,10 @@ import javafx.scene.control.skin.DatePickerSkin;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+
 public class MainUI extends BorderPane {
     private TextField titleField;
     private TextArea descriptionField;
@@ -19,8 +25,10 @@ public class MainUI extends BorderPane {
     private ScrollPane centerPane;
     private GridPane inputArea;
     private DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
+    public static ArrayList<Task> tasks;
 
     public MainUI(){
+        tasks = new ArrayList<>();
         leftPane = new VBox();
         centerPane = new ScrollPane();
         inputArea = new GridPane();
@@ -37,6 +45,7 @@ public class MainUI extends BorderPane {
         taskListContainer.setPadding(new Insets(10));
         centerPane.setContent(taskListContainer);
         centerPane.setFitToWidth(true);
+
 
         inputArea.setHgap(10);
         inputArea.setVgap(10);
@@ -87,6 +96,68 @@ public class MainUI extends BorderPane {
         });
 
 
+        File file = new File("tasks.json");
+        if(file.exists() && !file.isDirectory()){
+            System.out.println("found tasks.json file!");
+            loadTasks(file);
+        }else{
+            System.out.println("file not found");
+        }
+
+
+    }
+    private void renderTask(Task task){
+        CheckBox checkBox = new CheckBox();
+        HBox taskRow = new HBox(15);
+        VBox textData  = new VBox(2);
+        Region spacer = new Region();
+
+
+        taskRow.setPadding(new Insets(5));
+        Text taskText = new Text(task.getTitle() + " [" + task.getDate() + "]");
+        textData.getChildren().add(taskText);
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button removeButton = new Button("Delete");
+        removeButton.setOnAction(removeEvent -> {
+            taskListContainer.getChildren().remove(taskRow);
+            tasks.remove(task);
+        });
+
+
+        EventHandler<ActionEvent> checkBoxEvent = new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                if(checkBox.isSelected()){
+                    taskRow.setOpacity(0.5);
+                    taskText.setStrikethrough(true);
+                    taskText.setFill(Color.GRAY);
+                }else{
+                    taskRow.setOpacity(1);
+                    taskText.setStrikethrough(false);
+                    taskText.setFill(Color.BLACK);
+                }
+            }
+        };
+        checkBox.setOnAction(checkBoxEvent);
+
+        removeButton.setVisible(false);
+        removeButton.setFocusTraversable(false);
+        taskRow.setFocusTraversable(true);
+        taskRow.setOnMouseClicked(deleteVisibilityEvent -> {taskRow.requestFocus();});
+        taskRow.focusedProperty().addListener((observable, wasFocused, nowFocus)-> {
+            if(nowFocus){
+                removeButton.setVisible(true);
+            }else{
+                removeButton.setVisible(false);
+            }
+        });
+
+
+        taskRow.getChildren().addAll(checkBox,textData,spacer,removeButton);
+        taskListContainer.getChildren().add(taskRow);
+        titleField.clear();
+        descriptionField.clear();
     }
 
     private Button createAddButton() {
@@ -96,58 +167,11 @@ public class MainUI extends BorderPane {
             String title = titleField.getText();
             String description = descriptionField.getText();
 
-            if(!title.isEmpty()){
-                CheckBox checkBox = new CheckBox();
-                HBox taskRow = new HBox(15);
-                taskRow.setFocusTraversable(true);
-                taskRow.setPadding(new Insets(5));
-                Task task = new Task(title,description, date);
+            if(!title.isEmpty()) {
+                Task task = new Task(title, description, date);
+                tasks.add(task);
 
-                VBox textData = new VBox(2);
-                Text taskText = new Text(task.getTitle() + "[" + task.getDate() + "]");
-                textData.getChildren().add(taskText);
-
-
-                Region spacer = new Region();
-                HBox.setHgrow(spacer, Priority.ALWAYS);
-
-                Button removeButton = new Button("Delete");
-                removeButton.setOnAction(removeEvent -> {
-                    taskListContainer.getChildren().remove(taskRow);
-                });
-                taskRow.getChildren().addAll(checkBox,textData,spacer,removeButton);
-                taskListContainer.getChildren().add(taskRow);
-
-                EventHandler<ActionEvent> checkBoxEvent = new EventHandler<ActionEvent>() {
-                    @Override
-                    public void handle(ActionEvent event) {
-                        if(checkBox.isSelected()){
-                            taskRow.setOpacity(0.5);
-                            taskText.setStrikethrough(true);
-                            taskText.setFill(Color.GRAY);
-                        }else{
-                            taskRow.setOpacity(1);
-                            taskText.setStrikethrough(false);
-                            taskText.setFill(Color.BLACK);
-                        }
-                    }
-                };
-                checkBox.setOnAction(checkBoxEvent);
-
-                removeButton.setVisible(false);
-                removeButton.setFocusTraversable(false);
-                taskRow.setFocusTraversable(true);
-                taskRow.setOnMouseClicked(deleteVisibilityEvent -> {taskRow.requestFocus();});
-                taskRow.focusedProperty().addListener((observable, wasFocused, nowFocus)-> {
-                    if(nowFocus){
-                        removeButton.setVisible(true);
-                    }else{
-                        removeButton.setVisible(false);
-                    }
-                });
-
-                titleField.clear();
-                descriptionField.clear();
+                renderTask(task);
             }
         });
 
@@ -155,4 +179,19 @@ public class MainUI extends BorderPane {
         return addButton;
     }
 
+
+    private void loadTasks(File file){
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.findAndRegisterModules();
+        try{
+            tasks = mapper.readValue(file, new com.fasterxml.jackson.core.type.TypeReference<ArrayList<Task>>(){});
+            if(!tasks.isEmpty()){
+                for(Task t : tasks){
+                    renderTask(t);
+                }
+            }
+        }catch (IOException e){
+            System.out.println("error loading");
+        }
+    }
 }
